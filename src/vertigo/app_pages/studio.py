@@ -46,37 +46,16 @@ def _reference_tray() -> list[str]:
             if asset.id not in refs
         ][:60]
         if candidates:
-            rows = [
-                {
-                    "Preview": ui.thumbnail_data_url(asset, library),
-                    "Name": asset.name,
-                    "Added": ui.relative_time(asset.created_at),
-                }
-                for asset in candidates
-            ]
-            state = st.dataframe(
-                rows,
+            picked = ui.thumbnail_table(
+                library,
+                candidates,
                 key="studio_ref_table",
-                hide_index=True,
                 height=240,
-                on_select="rerun",
                 selection_mode="multi-row",
-                column_order=("Preview", "Name", "Added"),
-                column_config={
-                    "Preview": st.column_config.ImageColumn("", width="small"),
-                    "Name": st.column_config.TextColumn(
-                        i18n.t("library.column.name"), width="medium"
-                    ),
-                    "Added": st.column_config.TextColumn(
-                        i18n.t("library.column.created"), width="small"
-                    ),
-                },
             )
             if st.button(i18n.t("studio.refs.add_selected"), key="studio_ref_add"):
-                picked = list(state.selection.rows) if state is not None else []
-                for index in picked:
-                    if 0 <= index < len(candidates):
-                        refs.append(candidates[index].id)
+                for asset in picked:
+                    refs.append(asset.id)
                 st.session_state.studio_refs = refs
                 st.rerun()
         else:
@@ -95,10 +74,9 @@ def _reference_tray() -> list[str]:
             with columns[index % 6]:
                 ui.asset_image(asset, library)
                 if st.button(
-                    i18n.t("studio.refs.remove"),
+                    "✕",
                     key=f"studio_rm_{asset_id}",
-                    icon=":material/close:",
-                    label_visibility="collapsed",
+                    help=i18n.t("studio.refs.remove"),
                 ):
                     st.session_state.studio_refs = [r for r in refs if r != asset_id]
                     st.rerun()

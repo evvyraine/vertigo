@@ -343,6 +343,51 @@ def thumbnail_data_url(asset: Asset, library: Library) -> str | None:
     return _thumbnail_data_url(str(library.file_path(asset)), asset.is_svg, asset.size)
 
 
+def thumbnail_table(
+    library: Library,
+    assets: list[Asset],
+    *,
+    key: str,
+    height: int = 240,
+    selection_mode: str = "multi-row",
+    selection_default: dict[str, Any] | None = None,
+) -> list[Asset]:
+    """A selectable table of visual assets with inline thumbnails.
+
+    Returns the selected assets, mapped from stable row positions.
+    """
+    rows = [
+        {
+            "Preview": thumbnail_data_url(asset, library),
+            "Name": asset.name,
+            "Added": relative_time(asset.created_at),
+        }
+        for asset in assets
+    ]
+    state = st.dataframe(
+        rows,
+        key=key,
+        hide_index=True,
+        height=height,
+        on_select="rerun",
+        selection_mode=selection_mode,
+        selection_default=selection_default,
+        column_order=("Preview", "Name", "Added"),
+        column_config={
+            "Preview": st.column_config.ImageColumn("", width="small"),
+            "Name": st.column_config.TextColumn(
+                i18n.t("library.column.name"), width="medium"
+            ),
+            "Added": st.column_config.TextColumn(
+                i18n.t("library.column.created"), width="small"
+            ),
+        },
+        placeholder="—",
+    )
+    positions = list(state.selection.rows) if state is not None else []
+    return [assets[index] for index in positions if 0 <= index < len(assets)]
+
+
 def asset_image(asset: Asset, library: Library, *, width: "int | str" = "stretch") -> None:
     """Render a visual asset, handling SVG and raster images alike."""
     if asset.kind == config.KIND_TEXT:
@@ -462,8 +507,12 @@ def _library_choices(library: Library, kinds: Iterable[str]) -> dict[str, str]:
 
 
 def image_picker(library: Library, *, key: str, label: str | None = None, kinds=None) -> Asset | None:
-    """A single-image picker combining an uploader and the library."""
+    """A single-image picker combining an uploader and a thumbnail table."""
     kinds = kinds or [config.KIND_IMAGE]
+    # Older versions stored a selectbox value here; reset incompatible state.
+    if key in st.session_state and not isinstance(st.session_state[key], dict):
+        st.session_state.pop(key, None)
+
     uploaded = st.file_uploader(
         label or i18n.t("common.source_image"),
         type=config.IMAGE_UPLOAD_TYPES,
@@ -472,14 +521,25 @@ def image_picker(library: Library, *, key: str, label: str | None = None, kinds=
     new_ids = ingest_uploads(
         uploaded, index_key=f"{key}_index", origin=config.ORIGIN_REFERENCE
     )
-    options = _library_choices(library, kinds)
-    if not options:
+    assets = library.newest_first(library.filter(kinds=kinds))[:60]
+    if not assets:
         st.caption(i18n.t("common.upload_image_hint"))
         return None
-    if new_ids and new_ids[0] in options.values():
-        st.session_state[key] = next(k for k, v in options.items() if v == new_ids[0])
-    choice = st.selectbox(i18n.t("common.choose_from_library"), list(options), key=key)
-    return library.get(options[choice])
+
+    if new_ids:
+        index = next((i for i, a in enumerate(assets) if a.id == new_ids[0]), None)
+        if index is not None:
+            st.session_state[key] = {"selection": {"rows": [index]}}
+
+    selected = thumbnail_table(
+        library,
+        assets,
+        key=key,
+        height=200,
+        selection_mode="single-row",
+        selection_default={"selection": {"rows": [0]}},
+    )
+    return selected[0] if selected else None
 
 
 def audio_picker(library: Library, *, key: str, label: str | None = None) -> Asset | None:

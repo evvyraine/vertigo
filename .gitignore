@@ -1,0 +1,21 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+# Local Vertigo data (only if VERTIGO_HOME points into the project)
+.vertigo/
+data/
+
+# Secrets
+.env
+.streamlit/secrets.toml
+
+# OS files
+.DS_Store

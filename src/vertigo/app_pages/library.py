@@ -9,9 +9,8 @@ download, reuse or delete the right assets.
 
 from __future__ import annotations
 
-import base64
-import io
 from datetime import datetime
+from pathlib import Path
 from typing import Any
 
 import streamlit as st
@@ -22,7 +21,6 @@ from vertigo.store import Asset
 library = ui.current_library()
 
 THUMB_LIMIT = 400
-THUMB_SIZE = (96, 96)
 
 KIND_FILTERS: dict[str, list[str] | None] = {
     "all": None,
@@ -43,38 +41,6 @@ ORIGINS: dict[str, list[str] | None] = {
 # --------------------------------------------------------------------------- #
 # Thumbnails & helpers
 # --------------------------------------------------------------------------- #
-
-
-@st.cache_data(show_spinner=False, max_entries=1024)
-def _thumbnail(path: str, is_svg: bool, size: int) -> str | None:
-    """Return a small data URL for a visual asset, or None if unavailable.
-
-    ``ImageColumn`` doesn't accept local file paths, so images are downscaled
-    with Pillow and inlined as base64. Cached by path + file size.
-    """
-    try:
-        with open(path, "rb") as handle:
-            data = handle.read()
-    except OSError:
-        return None
-
-    if is_svg:
-        return "data:image/svg+xml;base64," + base64.b64encode(data).decode("ascii")
-
-    try:
-        from PIL import Image
-    except Exception:  # pragma: no cover - Pillow ships with Streamlit
-        return None
-    try:
-        with Image.open(io.BytesIO(data)) as image:
-            image.thumbnail(THUMB_SIZE)
-            if image.mode not in ("RGB", "RGBA"):
-                image = image.convert("RGBA")
-            buffer = io.BytesIO()
-            image.save(buffer, format="WEBP", quality=72, method=4)
-    except Exception:  # noqa: BLE001 - unreadable image should not break the page
-        return None
-    return "data:image/webp;base64," + base64.b64encode(buffer.getvalue()).decode("ascii")
 
 
 def _parse_datetime(value: str) -> datetime | None:
@@ -141,6 +107,36 @@ def _confirm_delete(asset_ids: list[str]) -> None:
             st.rerun()
 
 
+@st.dialog(i18n.t("library.rename_title"))
+def _confirm_rename(asset_id: str) -> None:
+    asset = library.get(asset_id)
+    if asset is None:
+        st.session_state.pop("rename_asset_id", None)
+        st.rerun()
+    assert asset is not None
+    new_name = st.text_input(
+        i18n.t("library.rename_label"), value=asset.name, key="rename_input"
+    )
+    with st.container(horizontal=True):
+        if st.button(
+            i18n.t("common.save"),
+            type="primary",
+            icon=":material/save:",
+            key="rename_save",
+        ):
+            clean = new_name.strip()
+            if clean:
+                if not Path(clean).suffix:
+                    clean = f"{clean}{Path(asset.name).suffix}"
+                library.update(asset_id, name=clean)
+                st.session_state.pop("rename_asset_id", None)
+                st.toast(i18n.t("toast.renamed", name=clean), icon=":material/check_circle:")
+                st.rerun()
+        if st.button(i18n.t("common.cancel"), key="rename_cancel"):
+            st.session_state.pop("rename_asset_id", None)
+            st.rerun()
+
+
 def _add_references(assets: list[Asset]) -> None:
     refs = st.session_state.setdefault("studio_refs", [])
     added = 0
@@ -202,6 +198,13 @@ def _render_single(asset: Asset) -> None:
                         icon=":material/edit_note:",
                     ):
                         _add_references([asset])
+                if st.button(
+                    i18n.t("library.rename"),
+                    key=f"lib_rename_{asset.id}",
+                    icon=":material/edit:",
+                ):
+                    st.session_state["rename_asset_id"] = asset.id
+                    st.rerun()
                 if asset.kind == config.KIND_TEXT:
                     srt = ui.transcript_srt(asset)
                     if srt:
@@ -264,6 +267,9 @@ if st.session_state.pop("_clear_library_selection", False):
 if st.session_state.get("delete_asset_ids"):
     _confirm_delete(st.session_state["delete_asset_ids"])
 
+if st.session_state.get("rename_asset_id"):
+    _confirm_rename(st.session_state["rename_asset_id"])
+
 filters = st.columns([2, 1, 2])
 with filters[0]:
     kind_choice = st.segmented_control(
@@ -305,7 +311,7 @@ thumbnails = THUMB_LIMIT
 for asset in assets:
     preview = None
     if asset.is_visual and thumbnails > 0:
-        preview = _thumbnail(str(library.file_path(asset)), asset.is_svg, asset.size)
+        preview = ui.thumbnail_data_url(asset, library)
         thumbnails -= 1
     rows.append(
         {

@@ -157,7 +157,6 @@ page = st.navigation(_sections, position="sidebar")
 
 with st.sidebar:
     st.space("small")
-    hhint = fal.key_hint(fal.resolve_key())
     st.caption(
         i18n.t("sidebar.signed_in", name=st.session_state.get("user_name", ""))
         + "  ·  "
@@ -173,9 +172,7 @@ with st.sidebar:
         st.session_state.pop("user_name", None)
         st.rerun()
     ui.language_switch()
-    if fal.has_key():
-        st.caption(i18n.t("sidebar.fal_key", hint=hhint))
-    else:
+    if not fal.has_key():
         st.caption(i18n.t("sidebar.no_key"))
 
 st.title(page.title, icon=page.icon)

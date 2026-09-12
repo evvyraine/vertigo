@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import base64
 import hashlib
+import io
 import json
 from datetime import datetime, timezone
 from typing import Any, Iterable
@@ -299,6 +301,48 @@ def key_ready(*, inline: bool = True) -> bool:
 # --------------------------------------------------------------------------- #
 
 
+THUMB_SIZE = (96, 96)
+
+
+@st.cache_data(show_spinner=False, max_entries=1024)
+def _thumbnail_data_url(path: str, is_svg: bool, size: int) -> str | None:
+    """Small inline preview for a visual asset.
+
+    ``ImageColumn`` needs a URL or data URL (local paths aren't supported), so
+    images are downscaled with Pillow and base64-encoded. Cached by path+size.
+    """
+    try:
+        with open(path, "rb") as handle:
+            data = handle.read()
+    except OSError:
+        return None
+
+    if is_svg:
+        return "data:image/svg+xml;base64," + base64.b64encode(data).decode("ascii")
+
+    try:
+        from PIL import Image
+    except Exception:  # pragma: no cover - Pillow ships with Streamlit
+        return None
+    try:
+        with Image.open(io.BytesIO(data)) as image:
+            image.thumbnail(THUMB_SIZE)
+            if image.mode not in ("RGB", "RGBA"):
+                image = image.convert("RGBA")
+            buffer = io.BytesIO()
+            image.save(buffer, format="WEBP", quality=72, method=4)
+    except Exception:  # noqa: BLE001 - an unreadable image shouldn't break the page
+        return None
+    return "data:image/webp;base64," + base64.b64encode(buffer.getvalue()).decode("ascii")
+
+
+def thumbnail_data_url(asset: Asset, library: Library) -> str | None:
+    """A data-URL thumbnail for a visual asset, or None."""
+    if not asset.is_visual:
+        return None
+    return _thumbnail_data_url(str(library.file_path(asset)), asset.is_svg, asset.size)
+
+
 def asset_image(asset: Asset, library: Library, *, width: "int | str" = "stretch") -> None:
     """Render a visual asset, handling SVG and raster images alike."""
     if asset.kind == config.KIND_TEXT:
@@ -365,10 +409,10 @@ def asset_grid(
     if not assets:
         st.caption(empty_message or i18n.t("common.asset_empty"))
         return
-    grid = st.columns(columns, gap="medium", wrap=False)
+    grid = st.columns(columns, gap="small", wrap=False)
     for index, asset in enumerate(assets):
         with grid[index % columns]:
-            with st.container(border=True):
+            with st.container(border=True, height="stretch"):
                 asset_image(asset, library)
                 st.caption(asset.name)
                 st.caption(asset_caption(asset))

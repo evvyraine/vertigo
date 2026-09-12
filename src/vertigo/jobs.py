@@ -79,6 +79,7 @@ class Job:
     asset_ids: list[str] = field(default_factory=list)
     parent_id: str | None = None
     summary: str = ""
+    name_hint: str = ""
     created_at: str = field(default_factory=_now)
     updated_at: str = field(default_factory=_now)
     started_at: str | None = None
@@ -191,6 +192,7 @@ class JobManager:
         arguments: dict[str, Any],
         save_kind: str,
         parent_id: str | None = None,
+        name_hint: str = "",
     ) -> str:
         job = Job(
             id=uuid.uuid4().hex[:12],
@@ -200,6 +202,7 @@ class JobManager:
             arguments=arguments,
             save_kind=save_kind,
             parent_id=parent_id,
+            name_hint=name_hint,
             status="queued",
         )
         with self._lock:
@@ -371,6 +374,12 @@ class JobManager:
         name = item.get("file_name") or fallback_name
         if not media_type:
             media_type = mimetypes.guess_type(name)[0] or "application/octet-stream"
+
+        if job.name_hint:
+            # Prefer a name derived from the request (e.g. the spoken text).
+            extension = Path(name).suffix or mimetypes.guess_extension(media_type) or ""
+            suffix = f"-{index + 1}" if index else ""
+            name = f"{job.name_hint}{suffix}{extension}"
 
         data = fal.download_bytes(url)
         kind = _kind_for(job, media_type, name)

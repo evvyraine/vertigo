@@ -60,16 +60,17 @@ for column, (icon, title, body, path) in zip(cards, _card_content):
     with column, st.container(border=True, height="stretch"):
         st.markdown(f"### {icon} {title}")
         st.write(body)
+        st.space("stretch")
         st.page_link(
             path,
-            label=i18n.t("home.open", title=title),
+            label=i18n.t("home.open"),
             icon=":material/arrow_forward:",
         )
 
 st.subheader(i18n.t("home.recent_visuals"), icon=":material/imagesmode:")
-recent_visuals = library.recent(6, kinds=[config.KIND_IMAGE, config.KIND_VECTOR])
+recent_visuals = library.recent(8, kinds=[config.KIND_IMAGE, config.KIND_VECTOR])
 if recent_visuals:
-    ui.asset_grid(recent_visuals, library, columns=3)
+    ui.asset_grid(recent_visuals, library, columns=4)
 else:
     st.caption(
         i18n.t("home.recent_visuals_empty", path="app_pages/studio.py")

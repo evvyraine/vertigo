@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import streamlit as st
 
-from vertigo import config, fal, i18n, ui
+from vertigo import config, fal, i18n, naming, ui
 from vertigo.jobs import SAVE_AUDIO, SAVE_TRANSCRIPT
 
 library = ui.current_library()
@@ -21,6 +21,7 @@ def _queue_tts(arguments: dict) -> None:
         endpoint=config.TTS_ENDPOINT,
         arguments=arguments,
         save_kind=SAVE_AUDIO,
+        name_hint=naming.slugify(str(arguments.get("text", ""))),
     )
     st.session_state.speech_jobs.insert(0, job_id)
     st.toast(i18n.t("toast.speech_queued"), icon=":material/queue:")

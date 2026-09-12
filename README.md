@@ -149,7 +149,7 @@ streamlit_app.py        # profile gate, navigation + shared state
 app_pages/              # one script per page (Home, Studio, Enhance, Speech, Library, Settings)
 auth.py                 # profile registry, PIN hashing, legacy migration
 i18n.py                 # English/Russian interface translations
-config.py               # paths, model catalogue, theme
+config.py               # paths, model catalogue, settings
 store.py                # per-profile, thread-safe, file-backed asset library
 fal.py                  # credential resolution + fal-client wrappers
 jobs.py                 # per-profile background queue, persistence, restart recovery
@@ -160,6 +160,19 @@ Generations are submitted with `fal_client.subscribe` inside a small thread pool
 `Job` records its fal request id, status, logs and output asset ids; results are
 downloaded and registered in the library automatically. Because job state is persisted,
 an in-flight job can be re-attached after a restart using its request id.
+
+## Theming
+
+The interface uses **Inter Tight** with generous corner radii and soft, low-contrast
+surfaces. Both `[theme.light]` and `[theme.dark]` are defined in
+[`.streamlit/config.toml`](.streamlit/config.toml), so you can switch between them from
+the Streamlit settings menu (⋮ → Settings → Theme):
+
+- Light — soft-gray surface (`#f3f4f6`) instead of off-white, white cards.
+- Dark — very dark gray surface (`#17181c`) instead of off-black.
+
+Streamlit reads `.streamlit/config.toml` from the working directory, so launch from the
+project root (or via the background service, whose working directory is the project).
 
 ## Notes
 

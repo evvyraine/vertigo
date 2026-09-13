@@ -24,6 +24,12 @@ def main() -> None:
     if not app.exists():  # pragma: no cover - defensive
         raise SystemExit(f"Could not find the Streamlit app at {app}")
 
+    # Generate Streamlit's secrets.toml for Telegram sign-in before the server
+    # (and its lazy secret store) starts up.
+    from . import oidc
+
+    oidc.write_secrets()
+
     # The custom theme lives in `.streamlit/config.toml`, which Streamlit reads
     # from the working directory. Run from the project root (or via the launchd
     # service, whose WorkingDirectory is the project) for the styled look.

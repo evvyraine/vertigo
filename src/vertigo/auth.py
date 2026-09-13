@@ -65,6 +65,7 @@ def _hash_pin(pin: str, salt: bytes) -> str:
 class User:
     id: str
     name: str
+    telegram_id: str = ""
     pin_salt: str = ""
     pin_hash: str = ""
     is_admin: bool = False
@@ -140,6 +141,44 @@ def user_by_name(name: str) -> User | None:
         if user.name.strip().casefold() == needle:
             return user
     return None
+
+
+def user_by_telegram(telegram_id: str | None) -> User | None:
+    """Return the profile linked to a Telegram subject id, if any."""
+    if not telegram_id:
+        return None
+    needle = str(telegram_id)
+    for user in list_users():
+        if user.telegram_id == needle:
+            return user
+    return None
+
+
+def ensure_telegram_user(telegram_id: str, name: str = "", username: str = "") -> User:
+    """Return the profile for a Telegram account, creating it on first sign-in."""
+    existing = user_by_telegram(telegram_id)
+    if existing is not None:
+        return existing
+    cleaned = (name or username or f"Telegram {str(telegram_id)[-4:]}").strip()[:40]
+    cleaned = cleaned or "Telegram user"
+    with _lock:
+        users = [User.from_dict(r) for r in _load_raw()]
+        taken = {user.name.strip().casefold() for user in users}
+        candidate = cleaned
+        suffix = 2
+        while candidate.casefold() in taken:
+            candidate = f"{cleaned} {suffix}"
+            suffix += 1
+        user = User(
+            id=uuid.uuid4().hex[:8],
+            name=candidate,
+            telegram_id=str(telegram_id),
+            is_admin=not any(u.is_admin for u in users if u.telegram_id),
+            must_change_pin=False,
+        )
+        users.append(user)
+        _save(users)
+        return user
 
 
 def is_admin(user_id: str | None) -> bool:

@@ -9,7 +9,7 @@ import time
 
 import streamlit as st
 
-from vertigo import auth, fal, i18n, ui
+from vertigo import auth, fal, i18n, oidc, ui
 
 st.set_page_config(
     page_title="Vertigo",
@@ -30,10 +30,49 @@ i18n.set_language(ui.current_language())
 # Apply queued cookie writes from the previous run (fire-and-forget script).
 ui.render_cookie_bridge()
 
+
+def _telegram_login_screen() -> None:
+    """Render the Telegram sign-in screen when OIDC is enabled."""
+    _, middle, _ = st.columns([1, 1.3, 1])
+    with middle:
+        st.markdown("## :material/cyclone: Vertigo")
+        st.caption("Sign in with Telegram to continue.")
+        ui.language_switch("")
+        try:
+            if st.button(
+                "Sign in with Telegram",
+                type="primary",
+                icon=":material/send:",
+                key="telegram_sign_in",
+            ):
+                st.login(oidc.PROVIDER)
+        except Exception as exc:  # noqa: BLE001
+            st.error(f"Telegram sign-in is not configured yet: {exc}")
+        st.caption("Access is limited to approved Telegram accounts.")
+    st.stop()
+
+
+# Telegram is the outer gate when enabled; each account maps to a profile.
+if oidc.enabled():
+    if not oidc.is_logged_in():
+        _telegram_login_screen()
+    _member = auth.get_user(st.session_state.get("user_id"))
+    if _member is None or _member.telegram_id != oidc.subject():
+        ui.reset_profile_session()
+        _member = auth.ensure_telegram_user(
+            oidc.subject(), oidc.display_name(), oidc.username()
+        )
+        st.session_state["user_id"] = _member.id
+        st.session_state["user_name"] = _member.name
+        st.session_state["lang"] = ui.current_language()
+        i18n.set_language(ui.current_language())
+        st.rerun()
+
 # Auto sign-in from a remember-me cookie. Skipped right after an explicit
 # sign-out so the stale cookie in this request can't log the user back in.
 if (
-    auth.get_user(st.session_state.get("user_id")) is None
+    not oidc.enabled()
+    and auth.get_user(st.session_state.get("user_id")) is None
     and not st.session_state.get("_logged_out")
 ):
     cookie = ui.cookie_token()
@@ -99,7 +138,10 @@ if auth.get_user(st.session_state.get("user_id")) is None:
     ui.reset_profile_session()
     st.session_state.pop("user_id", None)
     st.session_state.pop("user_name", None)
-    _login_screen()
+    if oidc.enabled():
+        _telegram_login_screen()
+    else:
+        _login_screen()
     st.stop()
 
 PAGE_DEFS = [
@@ -165,12 +207,15 @@ with st.sidebar:
     if st.button(
         i18n.t("common.sign_out"), key="sidebar_sign_out", icon=":material/logout:"
     ):
-        ui.forget_session_cookie()
         ui.reset_profile_session()
-        st.session_state["_logged_out"] = True
-        st.session_state.pop("user_id", None)
-        st.session_state.pop("user_name", None)
-        st.rerun()
+        if oidc.enabled():
+            st.logout()
+        else:
+            ui.forget_session_cookie()
+            st.session_state["_logged_out"] = True
+            st.session_state.pop("user_id", None)
+            st.session_state.pop("user_name", None)
+            st.rerun()
     ui.language_switch()
     if not fal.has_key():
         st.caption(i18n.t("sidebar.no_key"))

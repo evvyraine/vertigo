@@ -9,7 +9,7 @@ import time
 
 import streamlit as st
 
-from vertigo import auth, fal, i18n, oidc, ui
+from vertigo import auth, fal, i18n, oidc, pwa, ui
 
 st.set_page_config(
     page_title="Vertigo",
@@ -18,6 +18,7 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
+pwa.install_pwa()
 fal.configure()
 auth.ensure_users()
 

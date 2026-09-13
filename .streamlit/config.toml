@@ -39,6 +39,7 @@ chartCategoricalColors = ["#6ea8fe", "#22d3ee", "#c084fc", "#34d399", "#fbbf24",
 
 [server]
 headless = true
+enableStaticServing = true
 
 [browser]
 gatherUsageStats = false

@@ -44,6 +44,25 @@ the administrator). Everyone gets an isolated library under
 `~/.vertigo/users/<id>/` and can generate at the same time. Change names and PINs in
 **Settings**. Set `VERTIGO_HOME` to relocate all data.
 
+## Telegram sign-in
+
+By default profiles are protected by their PINs. Set these environment variables
+to put Telegram in front of the whole app instead — each Telegram account is
+mapped to a profile (created on first sign-in), so libraries stay separated and
+no PIN is needed:
+
+```bash
+VERTIGO_OIDC_ENABLED=1
+VERTIGO_OIDC_CLIENT_ID=1234567890          # bot id from @BotFather
+VERTIGO_OIDC_CLIENT_SECRET=...             # from @BotFather (Login Widget)
+VERTIGO_PUBLIC_URL=https://vertigo.example.com
+```
+
+Vertigo writes `.streamlit/secrets.toml` for Streamlit's native OIDC support and
+uses `https://oauth.telegram.org` as the provider. Register the origin and
+`${VERTIGO_PUBLIC_URL}/oauth2callback` under **Login Widget → Allowed URLs** in
+@BotFather.
+
 ## Models
 
 GPT Image 2.5 · Nano Banana 2 · Recraft V3 · Recraft Vectorize · Ideogram

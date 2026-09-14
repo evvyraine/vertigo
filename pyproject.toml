@@ -3,18 +3,56 @@ name = "vertigo"
 version = "0.1.0"
 description = "A self-hosted generative media powerhouse built on fal.ai"
 readme = "README.md"
+requires-python = ">=3.11"
+license = "MIT"
+license-files = ["LICENSE"]
 authors = [
-    { name = "Evelyn", email = "evvyraine@gmail.com" }
+    { name = "Evelyn", email = "evvyraine@users.noreply.github.com" }
 ]
-requires-python = ">=3.14"
+keywords = [
+    "streamlit",
+    "fal",
+    "generative-ai",
+    "text-to-image",
+    "text-to-speech",
+    "self-hosted",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Web Environment",
+    "Framework :: Streamlit",
+    "Intended Audience :: End Users/Desktop",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Multimedia :: Graphics",
+    "Topic :: Multimedia :: Sound/Audio",
+]
 dependencies = [
     "fal-client>=1.0.1",
     "streamlit[auth]>=1.63.0",
 ]
 
+[project.urls]
+Homepage = "https://github.com/evvyraine/vertigo"
+Repository = "https://github.com/evvyraine/vertigo"
+Issues = "https://github.com/evvyraine/vertigo/issues"
+
 [project.scripts]
 vertigo = "vertigo:main"
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0",
+    "numpy>=1.26",
+    "pillow>=10.0",
+]
 
 [build-system]
 requires = ["uv_build>=0.12.9,<0.13.0"]
 build-backend = "uv_build"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

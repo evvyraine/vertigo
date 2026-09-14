@@ -58,6 +58,8 @@ def ensure_base_dirs() -> None:
 #: Static assets shipped inside the package (icons, brand mark).
 STATIC_DIR = Path(__file__).resolve().parent / "static"
 LOGO_FILE = STATIC_DIR / "brand" / "logo.png"
+#: Vector-derived mark used for the browser tab icon (reads better when tiny).
+FAVICON_FILE = STATIC_DIR / "brand" / "favicon.png"
 
 
 _config_lock = threading.Lock()

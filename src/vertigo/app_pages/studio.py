@@ -7,6 +7,7 @@ from typing import Any
 import streamlit as st
 
 from vertigo import config, fal, i18n, ui
+from vertigo.empty_state import empty_state
 from vertigo.jobs import SAVE_IMAGE, SAVE_IMAGES, Job
 from vertigo.store import Asset
 
@@ -253,18 +254,6 @@ def _studio_asset_actions(asset: Asset, job: Job) -> None:
         st.rerun()
 
 
-def _studio_stage(message: str) -> None:
-    """Placeholder shown in the output column while nothing is queued."""
-    with st.container(
-        border=True,
-        height="stretch",
-        horizontal_alignment="center",
-        vertical_alignment="center",
-    ):
-        st.markdown("### :material/imagesmode:")
-        st.caption(message)
-
-
 def _render_generate() -> None:
     left, right = st.columns([2, 3], gap="large")
 
@@ -322,7 +311,11 @@ def _render_generate() -> None:
                 on_asset=_studio_asset_actions,
             )
         else:
-            _studio_stage(i18n.t("studio.stage.empty"))
+            empty_state(
+                icon="imagesmode",
+                title=i18n.t("studio.stage.generate_title"),
+                description=i18n.t("studio.stage.generate_body"),
+            )
 
 
 # --------------------------------------------------------------------------- #
@@ -424,7 +417,11 @@ def _render_vectors() -> None:
                 on_asset=_studio_asset_actions,
             )
         else:
-            _studio_stage(i18n.t("studio.stage.empty"))
+            empty_state(
+                icon="polyline",
+                title=i18n.t("studio.stage.vector_title"),
+                description=i18n.t("studio.stage.vector_body"),
+            )
 
 
 # --------------------------------------------------------------------------- #

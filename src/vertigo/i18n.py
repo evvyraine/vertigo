@@ -196,7 +196,12 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         "studio.parameters": "Parameters",
         "studio.endpoint_edit": "Endpoint: `{endpoint}`",
         "studio.generate": "Generate",
-        "studio.stage.empty": "Your generations will appear here — describe an image and hit Generate.",
+        "studio.stage.generate_title": "Your generations will appear here",
+        "studio.stage.generate_body": "Describe an image and hit Generate.",
+        "studio.stage.vector_title": "Vector art will appear here",
+        "studio.stage.vector_body": (
+            "Describe a style and hit Generate vector, or trace an existing image into an SVG."
+        ),
         "studio.edit_reuse": "Edit / reuse",
         "studio.edit_reuse_help": "Use this output as the base for another generation.",
         "studio.vector.mode": "Vector mode",
@@ -232,6 +237,8 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         "enhance.face": "Face enhancement",
         "enhance.remove_bg": "Remove background",
         "enhance.upscale": "Upscale",
+        "enhance.stage.title": "Your enhanced images will appear here",
+        "enhance.stage.body": "Pick an image, choose remove background or upscale, then run it.",
         # Speech
         "speech.mode_tts": "Text to speech",
         "speech.mode_stt": "Transcribe audio",
@@ -254,6 +261,8 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         "speech.keyterms": "Keyterms (optional, comma separated)",
         "speech.keyterms_help": "Bias the model toward names or jargon. Adds 30% to the price.",
         "speech.transcribe": "Transcribe",
+        "speech.stage.title": "Speech and transcripts will appear here",
+        "speech.stage.body": "Write a script to narrate, or pick an audio file to transcribe.",
         # Library
         "library.search": "Search",
         "library.search_placeholder": "Name, prompt or endpoint…",
@@ -310,8 +319,8 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         "settings.connected": "Connected via {source} · key {hint}",
         "settings.no_key": "No API key configured. Vertigo cannot generate until one is added.",
         "settings.fal_key": "fal API key",
-        "settings.save_key": "Save key",
-        "settings.remove_saved_key": "Remove saved key",
+        "settings.save_key": "Save",
+        "settings.remove_saved_key": "Remove",
         "settings.fal_caption": (
             "Vertigo resolves the key from `FAL_KEY` in the environment first, then "
             "Streamlit secrets, then this saved key. Get one at [fal.ai/dashboard/keys]({url})."
@@ -549,7 +558,12 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         "studio.parameters": "Параметры",
         "studio.endpoint_edit": "Эндпоинт: `{endpoint}`",
         "studio.generate": "Сгенерировать",
-        "studio.stage.empty": "Здесь появятся результаты — опишите изображение и нажмите «Сгенерировать».",
+        "studio.stage.generate_title": "Здесь появятся результаты",
+        "studio.stage.generate_body": "Опишите изображение и нажмите «Сгенерировать».",
+        "studio.stage.vector_title": "Здесь появится вектор",
+        "studio.stage.vector_body": (
+            "Опишите стиль и нажмите «Создать вектор» либо трассируйте готовое изображение в SVG."
+        ),
         "studio.edit_reuse": "Редактировать",
         "studio.edit_reuse_help": "Использовать результат как основу для новой генерации.",
         "studio.vector.mode": "Режим вектора",
@@ -584,6 +598,8 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         "enhance.face": "Улучшение лиц",
         "enhance.remove_bg": "Убрать фон",
         "enhance.upscale": "Увеличить",
+        "enhance.stage.title": "Здесь появятся улучшенные изображения",
+        "enhance.stage.body": "Выберите изображение, режим «Убрать фон» или «Увеличить» и запустите.",
         "speech.mode_tts": "Текст в речь",
         "speech.mode_stt": "Транскрипция аудио",
         "speech.text": "Текст",
@@ -605,6 +621,8 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         "speech.keyterms": "Ключевые слова (необязательно, через запятую)",
         "speech.keyterms_help": "Смещает модель к именам и терминам. Увеличивает цену на 30%.",
         "speech.transcribe": "Транскрибировать",
+        "speech.stage.title": "Здесь появятся озвучка и транскрипты",
+        "speech.stage.body": "Введите текст для озвучки или выберите аудиофайл для транскрипции.",
         "library.search": "Поиск",
         "library.search_placeholder": "Название, промпт или эндпоинт…",
         "library.count": "Объектов: {count}",
@@ -659,8 +677,8 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         "settings.connected": "Подключено через {source} · ключ {hint}",
         "settings.no_key": "Ключ API не настроен. Без него Vertigo не сможет генерировать.",
         "settings.fal_key": "ключ fal API",
-        "settings.save_key": "Сохранить ключ",
-        "settings.remove_saved_key": "Удалить сохранённый ключ",
+        "settings.save_key": "Сохранить",
+        "settings.remove_saved_key": "Удалить",
         "settings.fal_caption": (
             "Vertigo берёт ключ сначала из переменной окружения `FAL_KEY`, затем из "
             "Streamlit secrets и лишь потом из сохранённого. Получите его на [fal.ai/dashboard/keys]({url})."

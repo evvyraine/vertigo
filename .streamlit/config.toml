@@ -1,26 +1,23 @@
-# Vertigo theme — Inter Tight, softer surfaces, larger radii.
-# Both light and dark variants are defined so the theme can be switched from
-# the Streamlit settings menu (⋮ → Settings → Theme).
+# Vertigo Theme
 
 [theme]
-baseRadius = "14px"
-buttonRadius = "14px"
-showWidgetBorder = true
-showSidebarBorder = true
-baseFontSize = 15
-font = "'Inter Tight':https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700&display=swap"
-headingFont = "'Inter Tight':https://fonts.googleapis.com/css2?family=Inter+Tight:wght@600;700&display=swap"
+baseRadius = "2px"
+buttonRadius = "2px"
+showWidgetBorder = false
+showSidebarBorder = false
+baseFontSize = 16
+font = "'Onest':https://fonts.googleapis.com/css2?family=Onest:wght@100..900"
+headingFont = "'Onest':https://fonts.googleapis.com/css2?family=Onest:wght@100..900"
 headingFontSizes = ["30px", "24px", "20px", "16px", "14px", "12px"]
 headingFontWeights = [600, 600, 500, 500, 500, 500]
 
 # Light: soft warm-gray surface instead of pure off-white.
 [theme.light]
 primaryColor = "#2563eb"
-backgroundColor = "#f3f4f6"
-secondaryBackgroundColor = "#ffffff"
+backgroundColor = "#ffffff"
+secondaryBackgroundColor = "#fafafa"
 textColor = "#1b1f24"
 linkColor = "#1d4ed8"
-borderColor = "#e3e5e9"
 codeBackgroundColor = "#f6f7f9"
 codeTextColor = "#1b1f24"
 chartCategoricalColors = ["#2563eb", "#0891b2", "#7c3aed", "#059669", "#d97706", "#dc2626", "#0ea5e9"]
@@ -32,7 +29,6 @@ backgroundColor = "#17181c"
 secondaryBackgroundColor = "#1f2126"
 textColor = "#e7e9ec"
 linkColor = "#8fb0ff"
-borderColor = "#2c2f36"
 codeBackgroundColor = "#1b1d22"
 codeTextColor = "#e7e9ec"
 chartCategoricalColors = ["#6ea8fe", "#22d3ee", "#c084fc", "#34d399", "#fbbf24", "#f87171", "#38bdf8"]

@@ -1,36 +1,48 @@
-"""Build Vertigo's icon set from the master logo.
+"""Build Vertigo's brand assets.
 
-The logo is AI-generated (see ``assets/brand/logo-source.png``); the master mark
-and the PWA/Apple icons are composed deterministically from it, so re-running
-this script reproduces the same files.
+Two masters live in ``assets/brand``:
+
+* ``logo-source.png`` — the original raster mark (holographic chrome). It is
+  trimmed and padded into the on-page logo ``static/brand/logo.png``.
+* ``vector.svg`` — a flat, single-path silhouette of the same swirl. Filled with
+  the brand blue it stays crisp at tiny sizes, so the browser tab icon and the
+  PWA / Apple touch icons are rendered from it.
 
     uv run python scripts/make_brand.py
 
 Outputs
 -------
-``src/vertigo/static/brand/logo.png``   trimmed, padded master mark
-``src/vertigo/static/icons/*.png``      PWA / Apple touch icons
+``src/vertigo/static/brand/logo.png``   trimmed, padded raster logo (pages)
+``src/vertigo/static/brand/favicon.png`` transparent vector mark (browser tab)
+``src/vertigo/static/icons/*.png``      PWA / Apple touch icons (vector)
 
-The README banner (``assets/banner.png``) and social preview
-(``assets/social.png``) are hand-made and not touched here.
+The README banner (``assets/banner.png``) is hand-made and not touched here.
 """
 
 from __future__ import annotations
 
+import io
 from pathlib import Path
 
 import numpy as np
+import resvg_py
 from PIL import Image, ImageDraw, ImageFilter
 
 ROOT = Path(__file__).resolve().parents[1]
-SOURCE = ROOT / "assets" / "brand" / "logo-source.png"
-LOGO_OUT = ROOT / "src" / "vertigo" / "static" / "brand" / "logo.png"
+RASTER_SOURCE = ROOT / "assets" / "brand" / "logo-source.png"
+VECTOR_SOURCE = ROOT / "assets" / "brand" / "vector.svg"
+BRAND_OUT = ROOT / "src" / "vertigo" / "static" / "brand"
 ICONS_OUT = ROOT / "src" / "vertigo" / "static" / "icons"
+LOGO_OUT = BRAND_OUT / "logo.png"
+FAVICON_OUT = BRAND_OUT / "favicon.png"
 
 # Palette — mirrors the Streamlit theme in .streamlit/config.toml.
+BRAND = "#2563eb"
 BG_TOP = (250, 251, 253)
 BG_BOTTOM = (230, 234, 242)
 SHADOW = (26, 30, 40)
+
+FAVICON_SIZE = 256
 
 
 # --------------------------------------------------------------------------- #
@@ -81,14 +93,43 @@ def _rounded(image: Image.Image, radius: int) -> Image.Image:
 
 
 # --------------------------------------------------------------------------- #
+# Vector mark
+# --------------------------------------------------------------------------- #
+def _vector_svg() -> str:
+    """The flat master, recoloured with the brand blue (it ships filled black)."""
+    return VECTOR_SOURCE.read_text(encoding="utf-8").replace('fill="black"', f'fill="{BRAND}"')
+
+
+def _render_vector(svg: str, size: int) -> Image.Image:
+    """Rasterise the vector mark onto a transparent square."""
+    png = resvg_py.svg_to_bytes(svg_string=svg, width=size, height=size)
+    return Image.open(io.BytesIO(png)).convert("RGBA")
+
+
+def _vector_mark(*, size: int, margin: float) -> Image.Image:
+    """A tight, recoloured vector mark on a transparent square canvas."""
+    mark = _trim(_render_vector(_vector_svg(), size), threshold=8)
+    return _squared(mark, margin=margin, size=size)
+
+
+# --------------------------------------------------------------------------- #
 # Assets
 # --------------------------------------------------------------------------- #
 def build_logo() -> Image.Image:
-    mark = _trim(Image.open(SOURCE).convert("RGBA"))
+    """The on-page logo: the original raster mark, trimmed and padded."""
+    mark = _trim(Image.open(RASTER_SOURCE).convert("RGBA"))
     logo = _squared(mark, margin=0.06, size=1024)
-    LOGO_OUT.parent.mkdir(parents=True, exist_ok=True)
+    BRAND_OUT.mkdir(parents=True, exist_ok=True)
     logo.save(LOGO_OUT, optimize=True, compress_level=9)
     return logo
+
+
+def build_favicon() -> Image.Image:
+    """The browser-tab icon: the vector mark on transparency, crisp at 16 px."""
+    BRAND_OUT.mkdir(parents=True, exist_ok=True)
+    favicon = _vector_mark(size=FAVICON_SIZE, margin=0.10)
+    favicon.save(FAVICON_OUT, optimize=True, compress_level=9)
+    return favicon
 
 
 def _icon(logo: Image.Image, size: int, *, rounded: bool, scale: float) -> Image.Image:
@@ -106,22 +147,26 @@ def _icon(logo: Image.Image, size: int, *, rounded: bool, scale: float) -> Image
     return _rounded(base, round(size * 0.22)) if rounded else base
 
 
-def build_icons(logo: Image.Image) -> None:
+def build_icons() -> None:
+    """PWA and Apple touch icons tiled with the vector mark."""
     ICONS_OUT.mkdir(parents=True, exist_ok=True)
+    mark = _vector_mark(size=1024, margin=0.06)
     targets = {
-        "icon-192.png": _icon(logo, 192, rounded=True, scale=0.74),
-        "icon-512.png": _icon(logo, 512, rounded=True, scale=0.74),
-        "icon-maskable-512.png": _icon(logo, 512, rounded=False, scale=0.60),
-        "apple-touch-icon.png": _icon(logo, 180, rounded=False, scale=0.74),
+        "icon-192.png": _icon(mark, 192, rounded=True, scale=0.74),
+        "icon-512.png": _icon(mark, 512, rounded=True, scale=0.74),
+        "icon-maskable-512.png": _icon(mark, 512, rounded=False, scale=0.60),
+        "apple-touch-icon.png": _icon(mark, 180, rounded=False, scale=0.74),
     }
     for name, image in targets.items():
         image.save(ICONS_OUT / name, optimize=True, compress_level=9)
 
 
 def main() -> None:
-    logo = build_logo()
-    build_icons(logo)
-    for path in (LOGO_OUT, *(ICONS_OUT / n for n in ("icon-192.png", "icon-512.png", "icon-maskable-512.png", "apple-touch-icon.png"))):
+    build_logo()
+    build_favicon()
+    build_icons()
+    names = ("icon-192.png", "icon-512.png", "icon-maskable-512.png", "apple-touch-icon.png")
+    for path in (LOGO_OUT, FAVICON_OUT, *(ICONS_OUT / n for n in names)):
         print(f"wrote {path.relative_to(ROOT)}")
 
 

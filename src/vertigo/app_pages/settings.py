@@ -188,34 +188,44 @@ def _render_connection() -> None:
 
     with st.container(border=True):
         with st.form("fal_key_form", clear_on_submit=True, border=False):
-            entry, action = st.columns([2, 1], gap="large", vertical_alignment="bottom")
-            with entry:
+            has_saved = fal.key_source() == "Saved in Vertigo settings"
+            ratios = [2, 1, 1] if has_saved else [2, 1]
+            cells = st.columns(ratios, gap="small", vertical_alignment="bottom")
+            with cells[0]:
                 entered = st.text_input(
                     i18n.t("settings.fal_key"),
                     type="password",
                     placeholder="key_id:key_secret",
                 )
-            with action:
-                submitted = st.form_submit_button(
+            with cells[1]:
+                save = st.form_submit_button(
                     i18n.t("settings.save_key"),
                     icon=":material/save:",
                     type="primary",
                     width="stretch",
                 )
-        if submitted:
+            remove = False
+            if has_saved:
+                with cells[2]:
+                    remove = st.form_submit_button(
+                        i18n.t("settings.remove_saved_key"),
+                        icon=":material/delete:",
+                        width="stretch",
+                    )
+
+        if save:
             if entered.strip():
                 fal.save_key(entered)
                 st.toast(i18n.t("toast.key_saved"), icon=":material/check_circle:")
                 st.rerun()
             else:
                 st.error(i18n.t("error.enter_key"))
+        elif remove:
+            fal.clear_saved_key()
+            st.toast(i18n.t("toast.key_removed"))
+            st.rerun()
 
         st.caption(i18n.t("settings.fal_caption", url=config.FAL_DASHBOARD_URL))
-        if fal.key_source() == "Saved in Vertigo settings":
-            if st.button(i18n.t("settings.remove_saved_key"), icon=":material/delete:"):
-                fal.clear_saved_key()
-                st.toast(i18n.t("toast.key_removed"))
-                st.rerun()
 
 
 # --------------------------------------------------------------------------- #

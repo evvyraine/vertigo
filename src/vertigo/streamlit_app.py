@@ -18,6 +18,12 @@ def _brand_logo_file():
     return logo if logo is not None and logo.exists() else None
 
 
+def _brand_favicon_file():
+    """Path to the packaged tab icon, tolerating a stale hot-reloaded config module."""
+    favicon = getattr(config, "FAVICON_FILE", None)
+    return favicon if favicon is not None and favicon.exists() else None
+
+
 @st.cache_data(show_spinner=False, max_entries=8)
 def _brand_image_uri(path: str, max_size: int) -> str | None:
     """Inline the brand mark as a data URI.
@@ -55,7 +61,7 @@ def _brand_source(width: int = 96) -> str | None:
 
 st.set_page_config(
     page_title="Vertigo",
-    page_icon=str(_brand_logo_file() or ":material/cyclone:"),
+    page_icon=str(_brand_favicon_file() or _brand_logo_file() or ":material/cyclone:"),
     layout="wide",
     initial_sidebar_state="expanded",
 )
@@ -254,14 +260,12 @@ for definition in PAGE_DEFS:
         st.Page(definition["path"], title=definition["title"], icon=definition["icon"])
     )
 
-page = st.navigation(_sections, position="sidebar")
+page = st.navigation(_sections, position="top")
 
 with st.sidebar:
     st.space("small")
     st.caption(
         i18n.t("sidebar.signed_in", name=st.session_state.get("user_name", ""))
-        + "  ·  "
-        + i18n.t("sidebar.jobs", count=ui.current_manager().counts()["total"])
     )
     if st.button(
         i18n.t("common.sign_out"), key="sidebar_sign_out", icon=":material/logout:"

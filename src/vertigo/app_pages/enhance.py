@@ -5,6 +5,7 @@ from __future__ import annotations
 import streamlit as st
 
 from vertigo import config, fal, i18n, ui
+from vertigo.empty_state import empty_state
 from vertigo.jobs import SAVE_IMAGE
 
 library = ui.current_library()
@@ -119,4 +120,11 @@ with left:
                 _queue_remove_bg(asset)
 
 with right:
-    ui.jobs_panel(st.session_state.enhance_jobs)
+    if st.session_state.enhance_jobs:
+        ui.jobs_panel(st.session_state.enhance_jobs)
+    else:
+        empty_state(
+            icon="high_quality",
+            title=i18n.t("enhance.stage.title"),
+            description=i18n.t("enhance.stage.body"),
+        )

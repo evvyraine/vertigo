@@ -5,6 +5,7 @@ from __future__ import annotations
 import streamlit as st
 
 from vertigo import config, fal, i18n, naming, ui
+from vertigo.empty_state import empty_state
 from vertigo.jobs import SAVE_AUDIO, SAVE_TRANSCRIPT
 
 library = ui.current_library()
@@ -151,4 +152,11 @@ with left:
             _queue_tts(arguments)
 
 with right:
-    ui.jobs_panel(st.session_state.speech_jobs)
+    if st.session_state.speech_jobs:
+        ui.jobs_panel(st.session_state.speech_jobs)
+    else:
+        empty_state(
+            icon="record_voice_over",
+            title=i18n.t("speech.stage.title"),
+            description=i18n.t("speech.stage.body"),
+        )

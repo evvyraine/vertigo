@@ -27,7 +27,7 @@ _SCRIPT = """
     head.appendChild(el);
   }
   add("link", { rel: "manifest", href: prefix + "/manifest.webmanifest" });
-  add("link", { rel: "icon", type: "image/png", sizes: "192x192", href: prefix + "/icons/icon-192.png" });
+  add("link", { rel: "icon", type: "image/png", href: prefix + "/brand/favicon.png" });
   add("link", { rel: "apple-touch-icon", sizes: "180x180", href: prefix + "/icons/apple-touch-icon.png" });
   add("meta", { name: "theme-color", content: "%(theme)s" });
   add("meta", { name: "mobile-web-app-capable", content: "yes" });

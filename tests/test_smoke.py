@@ -118,3 +118,40 @@ def test_write_secrets_respects_cwd(tmp_path, monkeypatch):
 
 def test_write_secrets_noop_when_disabled(vertigo_home):
     assert oidc.write_secrets() is None
+
+
+def test_brand_assets_are_packaged():
+    """The generated brand files exist at the sizes the app and PWA expect."""
+    from PIL import Image
+
+    icons = config.STATIC_DIR / "icons"
+    expected = {
+        config.LOGO_FILE: 1024,
+        config.FAVICON_FILE: 256,
+        icons / "icon-192.png": 192,
+        icons / "icon-512.png": 512,
+        icons / "icon-maskable-512.png": 512,
+        icons / "apple-touch-icon.png": 180,
+    }
+    for path, size in expected.items():
+        assert path.exists(), path
+        with Image.open(path) as image:
+            assert image.size == (size, size), path
+
+
+def test_literal_translations_resolve_in_every_language():
+    """Every ``i18n.t("...")`` literal in the source must exist in all locales."""
+    import re
+    from pathlib import Path
+
+    pattern = re.compile(r'i18n\.t\(\s*"([^"]+)"')
+    source = Path(i18n.__file__).resolve().parent
+    keys: set[str] = set()
+    for path in source.rglob("*.py"):
+        keys.update(pattern.findall(path.read_text(encoding="utf-8")))
+
+    assert keys
+    for language in i18n.LANGUAGES:
+        i18n.set_language(language)
+        missing = sorted(key for key in keys if i18n.t(key) == key)
+        assert missing == [], f"{language}: {missing}"

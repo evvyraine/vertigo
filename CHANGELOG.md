@@ -11,6 +11,7 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Hosting guide (`docs/hosting.md`), Dockerfile and `docker-compose.yml`.
 - Smoke tests and a GitHub Actions CI matrix for Python 3.11–3.14.
 - `CONTRIBUTING.md` and this changelog.
+- A holographic brand mark, regenerated PWA/Apple icons and a README banner.
 
 ### Changed
 

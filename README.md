@@ -1,3 +1,5 @@
+![Vertigo](assets/banner.png)
+
 # Vertigo
 
 Self-hosted generative media on [fal.ai](https://fal.ai) — a small, friendly

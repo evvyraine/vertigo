@@ -13,7 +13,7 @@ def main() -> None:
     """Launch the Vertigo Streamlit app.
 
     Extra command line arguments are forwarded to ``streamlit run`` so callers
-    can override server settings, e.g. ``vertigo --server.port 8600``.
+    can override server settings, e.g. ``vertigo --server.port 8501``.
     """
     import sys
     from pathlib import Path

@@ -11,9 +11,16 @@ import streamlit as st
 
 from vertigo import auth, config, fal, i18n, oidc, pwa, ui
 
+
+def _brand_logo_file():
+    """Path to the packaged mark, tolerating a stale hot-reloaded config module."""
+    logo = getattr(config, "LOGO_FILE", None)
+    return logo if logo is not None and logo.exists() else None
+
+
 st.set_page_config(
     page_title="Vertigo",
-    page_icon=str(config.LOGO_FILE) if config.LOGO_FILE.exists() else ":material/cyclone:",
+    page_icon=str(_brand_logo_file() or ":material/cyclone:"),
     layout="wide",
     initial_sidebar_state="expanded",
 )
@@ -34,8 +41,9 @@ ui.render_cookie_bridge()
 
 def _brand_logo(width: int = 92) -> None:
     """Show the Vertigo mark, falling back to the material icon."""
-    if config.LOGO_FILE.exists():
-        st.image(str(config.LOGO_FILE), width=width)
+    logo = _brand_logo_file()
+    if logo is not None:
+        st.image(str(logo), width=width)
     else:
         st.markdown("## :material/cyclone:")
 

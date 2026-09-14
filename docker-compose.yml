@@ -1,0 +1,20 @@
+services:
+  vertigo:
+    build: .
+    image: vertigo:latest
+    ports:
+      - "8501:8501"
+    environment:
+      VERTIGO_HOME: /data
+      FAL_KEY: ${FAL_KEY:-}
+      # Telegram sign-in (optional) — see docs/hosting.md.
+      # VERTIGO_OIDC_ENABLED: "1"
+      # VERTIGO_OIDC_CLIENT_ID: ${VERTIGO_OIDC_CLIENT_ID:-}
+      # VERTIGO_OIDC_CLIENT_SECRET: ${VERTIGO_OIDC_CLIENT_SECRET:-}
+      # VERTIGO_PUBLIC_URL: https://vertigo.example.com
+    volumes:
+      - vertigo-data:/data
+    restart: unless-stopped
+
+volumes:
+  vertigo-data:

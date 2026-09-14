@@ -9,11 +9,11 @@ import time
 
 import streamlit as st
 
-from vertigo import auth, fal, i18n, oidc, pwa, ui
+from vertigo import auth, config, fal, i18n, oidc, pwa, ui
 
 st.set_page_config(
     page_title="Vertigo",
-    page_icon=":material/cyclone:",
+    page_icon=str(config.LOGO_FILE) if config.LOGO_FILE.exists() else ":material/cyclone:",
     layout="wide",
     initial_sidebar_state="expanded",
 )
@@ -32,11 +32,20 @@ i18n.set_language(ui.current_language())
 ui.render_cookie_bridge()
 
 
+def _brand_logo(width: int = 92) -> None:
+    """Show the Vertigo mark, falling back to the material icon."""
+    if config.LOGO_FILE.exists():
+        st.image(str(config.LOGO_FILE), width=width)
+    else:
+        st.markdown("## :material/cyclone:")
+
+
 def _telegram_login_screen() -> None:
     """Render the Telegram sign-in screen when OIDC is enabled."""
     _, middle, _ = st.columns([1, 1.3, 1])
     with middle:
-        st.markdown("## :material/cyclone: Vertigo")
+        _brand_logo()
+        st.markdown("## Vertigo")
         st.caption("Sign in with Telegram to continue.")
         ui.language_switch("")
         try:
@@ -92,7 +101,8 @@ def _login_screen() -> None:
     """Render the profile picker and PIN prompt."""
     _, middle, _ = st.columns([1, 1.3, 1])
     with middle:
-        st.markdown(f"## :material/cyclone: {i18n.t('login.title')}")
+        _brand_logo()
+        st.markdown(f"## {i18n.t('login.title')}")
         st.caption(i18n.t("login.subtitle"))
         ui.language_switch("")
 

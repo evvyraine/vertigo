@@ -55,6 +55,11 @@ def ensure_base_dirs() -> None:
     base_home().mkdir(parents=True, exist_ok=True)
 
 
+#: Static assets shipped inside the package (icons, brand mark).
+STATIC_DIR = Path(__file__).resolve().parent / "static"
+LOGO_FILE = STATIC_DIR / "brand" / "logo.png"
+
+
 _config_lock = threading.Lock()
 
 

@@ -130,6 +130,7 @@ IMAGE_MODELS: list[dict[str, Any]] = [
     {
         "id": "gpt-image-2.5",
         "label": "GPT Image 2.5",
+        "icon": ":material/auto_awesome:",
         "tagline": "Precision detail, typography and tight, surgical edits.",
         "t2i": "openai/gpt-image-2.5/sunburst/text-to-image",
         "edit": "openai/gpt-image-2.5/sunburst/edit",
@@ -143,6 +144,7 @@ IMAGE_MODELS: list[dict[str, Any]] = [
     {
         "id": "nano-banana-2",
         "label": "Nano Banana 2",
+        "icon": ":material/bolt:",
         "tagline": "Google's fast generation and multi-reference editor, up to 4K.",
         "t2i": "fal-ai/nano-banana-2",
         "edit": "fal-ai/nano-banana-2/edit",

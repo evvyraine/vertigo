@@ -18,6 +18,41 @@ def _brand_logo_file():
     return logo if logo is not None and logo.exists() else None
 
 
+@st.cache_data(show_spinner=False, max_entries=8)
+def _brand_image_uri(path: str, max_size: int) -> str | None:
+    """Inline the brand mark as a data URI.
+
+    Passing a data URI keeps Streamlit from re-registering the file with the
+    media endpoint on every rerun, so the browser never re-downloads the logo
+    when navigating between pages. The encoded result is cached by Streamlit.
+    """
+    try:
+        import base64
+        import io
+
+        from PIL import Image
+    except Exception:  # pragma: no cover - Pillow ships with Streamlit
+        return None
+    try:
+        with Image.open(path) as image:
+            if image.mode not in ("RGB", "RGBA"):
+                image = image.convert("RGBA")
+            image.thumbnail((max_size, max_size))
+            buffer = io.BytesIO()
+            image.save(buffer, format="PNG")
+    except Exception:  # noqa: BLE001 - a broken asset shouldn't break the app
+        return None
+    return "data:image/png;base64," + base64.b64encode(buffer.getvalue()).decode("ascii")
+
+
+def _brand_source(width: int = 96) -> str | None:
+    """A cached data URI for the mark, falling back to the file path."""
+    logo = _brand_logo_file()
+    if logo is None:
+        return None
+    return _brand_image_uri(str(logo), max_size=width) or str(logo)
+
+
 st.set_page_config(
     page_title="Vertigo",
     page_icon=str(_brand_logo_file() or ":material/cyclone:"),
@@ -41,9 +76,9 @@ ui.render_cookie_bridge()
 
 def _brand_logo(width: int = 92) -> None:
     """Show the Vertigo mark, falling back to the material icon."""
-    logo = _brand_logo_file()
-    if logo is not None:
-        st.image(str(logo), width=width)
+    source = _brand_source(width=max(96, width * 2))
+    if source is not None:
+        st.image(source, width=width)
     else:
         st.markdown("## :material/cyclone:")
 
@@ -162,6 +197,11 @@ if auth.get_user(st.session_state.get("user_id")) is None:
     else:
         _login_screen()
     st.stop()
+
+# App chrome: the mark sits in the sidebar header (cached as a data URI).
+_logo = _brand_source(width=96)
+if _logo is not None:
+    st.logo(_logo, size="large")
 
 PAGE_DEFS = [
     {

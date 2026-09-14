@@ -15,6 +15,20 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- Use `st.logo` for the brand mark in the app chrome (sidebar header), embedded
+  as a cached downscaled data URI so it no longer re-downloads on reruns or
+  when navigating between pages.
+- Image studio: pick models with icon `st.pills`, group the generation controls
+  in a bordered container, put the full-width **Generate** button above a
+  compact **Parameters** expander at the bottom, place the reference uploader and
+  "Add from library" side by side, and pair Style/Size in the vector tab.
+- Show the placeholder card in the output column while nothing is queued.
+- Running jobs show a single animated spinner (`st.status`) instead of two
+  static progress icons.
+- Settings is reorganised into Profile / Connection / Data / Profiles / About
+  tabs. Rename, PIN and "Add profile" live in borderless popovers, the fal key
+  field is narrower next to its Save button, the danger zone is tinted red, and
+  the family list is a `st.dataframe` with a Remove button column.
 - Broaden `requires-python` from 3.14 to **3.11+**.
 - `secrets.toml` is now written next to the running app (configurable via
   `VERTIGO_SECRETS_DIR`) and **merged** with existing content instead of being

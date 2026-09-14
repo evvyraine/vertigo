@@ -579,16 +579,21 @@ def transcript_srt(asset: Asset) -> str | None:
 
 def _render_job(job: Job, library: Library, on_asset: "Any | None" = None) -> None:
     manager = current_manager()
-    with st.container(border=True):
+    # A running job gets one real, animated spinner via `st.status`; finished
+    # jobs render in a bordered card.
+    if job.active:
+        frame = st.status(job.label, expanded=True, state="running")
+    else:
+        frame = st.container(border=True)
+    with frame:
         with st.container(horizontal=True, vertical_alignment="center"):
-            st.markdown(f"{status_icon(job.status)} **{job.label}**")
+            if not job.active:
+                st.markdown(f"{status_icon(job.status)} **{job.label}**")
             st.badge(i18n.t(f"status.{job.status}"), color=status_color(job.status))
             st.caption(relative_time(job.created_at))
         st.caption(f"`{job.endpoint}`")
 
-        if job.active:
-            st.caption(f":blue[:material/progress_activity:] {i18n.t(f'status.{job.status}')}…")
-        elif job.status == "failed":
+        if job.status == "failed":
             st.error(job.error or i18n.t("jobs.failed"), icon=":material/error:")
 
         if job.logs and job.active:

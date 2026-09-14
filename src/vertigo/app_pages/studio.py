@@ -26,40 +26,49 @@ TAB_VECTOR = "vector"
 def _reference_tray() -> list[str]:
     refs: list[str] = list(st.session_state.studio_refs)
 
-    uploaded = st.file_uploader(
-        i18n.t("studio.refs.add"),
-        type=config.IMAGE_UPLOAD_TYPES,
-        accept_multiple_files=True,
-        key="studio_ref_uploader",
-        help=i18n.t("studio.refs.help"),
+    upload_column, library_column = st.columns(
+        2, gap="small", vertical_alignment="bottom"
     )
+    with upload_column:
+        uploaded = st.file_uploader(
+            i18n.t("studio.refs.add"),
+            type=config.IMAGE_UPLOAD_TYPES,
+            accept_multiple_files=True,
+            key="studio_ref_uploader",
+            help=i18n.t("studio.refs.help"),
+        )
+    with library_column:
+        with st.popover(
+            i18n.t("studio.refs.from_library"),
+            icon=":material/photo_library:",
+            width="stretch",
+        ):
+            candidates = [
+                asset
+                for asset in library.newest_first(library.filter(kinds=[config.KIND_IMAGE]))
+                if asset.id not in refs
+            ][:60]
+            if candidates:
+                picked = ui.thumbnail_table(
+                    library,
+                    candidates,
+                    key="studio_ref_table",
+                    height=240,
+                    selection_mode="multi-row",
+                )
+                if st.button(i18n.t("studio.refs.add_selected"), key="studio_ref_add"):
+                    for asset in picked:
+                        refs.append(asset.id)
+                    st.session_state.studio_refs = refs
+                    st.rerun()
+            else:
+                st.caption(i18n.t("studio.refs.none_library"))
+
     for asset_id in ui.ingest_uploads(
         uploaded, index_key="studio_upload_index", origin=config.ORIGIN_REFERENCE
     ):
         if asset_id not in refs:
             refs.append(asset_id)
-
-    with st.popover(i18n.t("studio.refs.from_library"), icon=":material/photo_library:"):
-        candidates = [
-            asset
-            for asset in library.newest_first(library.filter(kinds=[config.KIND_IMAGE]))
-            if asset.id not in refs
-        ][:60]
-        if candidates:
-            picked = ui.thumbnail_table(
-                library,
-                candidates,
-                key="studio_ref_table",
-                height=240,
-                selection_mode="multi-row",
-            )
-            if st.button(i18n.t("studio.refs.add_selected"), key="studio_ref_add"):
-                for asset in picked:
-                    refs.append(asset.id)
-                st.session_state.studio_refs = refs
-                st.rerun()
-        else:
-            st.caption(i18n.t("studio.refs.none_library"))
 
     refs = [r for r in refs if library.get(r)]
     st.session_state.studio_refs = refs
@@ -244,50 +253,76 @@ def _studio_asset_actions(asset: Asset, job: Job) -> None:
         st.rerun()
 
 
+def _studio_stage(message: str) -> None:
+    """Placeholder shown in the output column while nothing is queued."""
+    with st.container(
+        border=True,
+        height="stretch",
+        horizontal_alignment="center",
+        vertical_alignment="center",
+    ):
+        st.markdown("### :material/imagesmode:")
+        st.caption(message)
+
+
 def _render_generate() -> None:
     left, right = st.columns([2, 3], gap="large")
 
     with left:
-        model_id = st.selectbox(
-            i18n.t("studio.model"),
-            [m["id"] for m in config.IMAGE_MODELS],
-            format_func=lambda value: config.model_by_id(value)["label"],
-            key="studio_model",
-            help="\n\n".join(
-                i18n.t(f"models.{m['id']}.tagline") for m in config.IMAGE_MODELS
-            ),
-        )
-        model = config.model_by_id(model_id)
+        with st.container(border=True):
+            model_id = st.pills(
+                i18n.t("studio.model"),
+                [m["id"] for m in config.IMAGE_MODELS],
+                default=config.IMAGE_MODELS[0]["id"],
+                format_func=lambda value: (
+                    f"{config.model_by_id(value)['icon']} "
+                    f"{config.model_by_id(value)['label']}"
+                ),
+                key="studio_model",
+                required=True,
+                help="\n\n".join(
+                    i18n.t(f"models.{m['id']}.tagline") for m in config.IMAGE_MODELS
+                ),
+            )
+            model = config.model_by_id(model_id or config.IMAGE_MODELS[0]["id"])
 
-        prompt = st.text_area(
-            i18n.t("studio.prompt"),
-            height=100,
-            key="studio_prompt",
-            placeholder=i18n.t("studio.prompt_placeholder"),
-        )
-        refs = _reference_tray()
+            prompt = st.text_area(
+                i18n.t("studio.prompt"),
+                height=100,
+                key="studio_prompt",
+                placeholder=i18n.t("studio.prompt_placeholder"),
+            )
+            refs = _reference_tray()
 
-        with st.expander(i18n.t("studio.parameters"), expanded=False):
-            params = _image_parameters(model)
-            endpoint = model["edit"] if refs else model["t2i"]
-            st.caption(i18n.t(f"models.{model['id']}.pricing"))
-            st.caption(i18n.t("studio.endpoint_edit", endpoint=endpoint))
+            ready = fal.has_key() and bool(prompt.strip())
+            generate = st.button(
+                i18n.t("studio.generate"),
+                type="primary",
+                icon=":material/auto_awesome:",
+                disabled=not ready,
+                key="studio_generate",
+                width="stretch",
+            )
 
-        ready = fal.has_key() and bool(prompt.strip())
-        if st.button(
-            i18n.t("studio.generate"),
-            type="primary",
-            icon=":material/auto_awesome:",
-            disabled=not ready,
-            key="studio_generate",
-        ):
-            _queue_image(model, prompt, refs, params)
+            with st.expander(
+                i18n.t("studio.parameters"), type="compact", expanded=False
+            ):
+                params = _image_parameters(model)
+                endpoint = model["edit"] if refs else model["t2i"]
+                st.caption(i18n.t(f"models.{model['id']}.pricing"))
+                st.caption(i18n.t("studio.endpoint_edit", endpoint=endpoint))
+
+            if generate:
+                _queue_image(model, prompt, refs, params)
 
     with right:
-        ui.jobs_panel(
-            st.session_state.studio_jobs,
-            on_asset=_studio_asset_actions,
-        )
+        if st.session_state.studio_jobs:
+            ui.jobs_panel(
+                st.session_state.studio_jobs,
+                on_asset=_studio_asset_actions,
+            )
+        else:
+            _studio_stage(i18n.t("studio.stage.empty"))
 
 
 # --------------------------------------------------------------------------- #
@@ -306,81 +341,90 @@ def _render_vectors() -> None:
     left, right = st.columns([2, 3], gap="large")
 
     with left:
-        if mode == "trace":
-            st.caption(i18n.t("studio.vector.trace_help"))
-            asset = ui.image_picker(
-                library, key="studio_trace_source", label=i18n.t("studio.vector.image_to_trace")
-            )
-            if st.button(
-                i18n.t("studio.vector.trace"),
-                type="primary",
-                icon=":material/polyline:",
-                disabled=not (fal.has_key() and asset),
-                key="studio_trace_go",
-            ):
-                if asset is not None:
-                    try:
-                        url = fal.ensure_remote_url(asset, library)
-                    except Exception as exc:  # noqa: BLE001
-                        st.error(i18n.t("error.prepare_asset", name=asset.name, error=exc))
-                    else:
-                        job_id = manager.submit(
-                            kind="vector",
-                            label=i18n.t("jobs.label.vectorize", name=asset.name),
-                            endpoint=config.VECTOR_ENDPOINT_TRACE,
-                            arguments={"image_url": url},
-                            save_kind=SAVE_IMAGE,
-                            parent_id=asset.id,
-                        )
-                        st.session_state.studio_jobs.insert(0, job_id)
-                        st.toast(i18n.t("toast.tracing"), icon=":material/queue:")
-        else:
-            prompt = st.text_area(
-                i18n.t("studio.prompt"),
-                height=100,
-                key="studio_vector_prompt",
-                placeholder=i18n.t("studio.prompt_placeholder"),
-            )
-            style_labels = [label for label, _ in config.VECTOR_STYLES]
-            style_label = st.selectbox(
-                i18n.t("studio.vector.style"), style_labels, key="studio_vector_style"
-            )
-            size_labels = list(config.VECTOR_SIZE_MAP)
-            size_label = st.selectbox(
-                i18n.t("studio.vector.size"),
-                size_labels,
-                index=size_labels.index("Square (1024²)"),
-                key="studio_vector_size",
-            )
-            st.caption(i18n.t("studio.vector.generate_caption"))
-            st.caption(i18n.t("studio.vector.pricing"))
-            if st.button(
-                i18n.t("studio.vector.generate"),
-                type="primary",
-                icon=":material/polyline:",
-                disabled=not (fal.has_key() and prompt.strip()),
-                key="studio_vector_go",
-            ):
-                job_id = manager.submit(
-                    kind="vector",
-                    label=i18n.t("jobs.label.vector"),
-                    endpoint=config.VECTOR_ENDPOINT_T2V,
-                    arguments={
-                        "prompt": prompt.strip(),
-                        "style": dict(config.VECTOR_STYLES)[style_label],
-                        "image_size": config.VECTOR_SIZE_MAP[size_label],
-                    },
-                    save_kind=SAVE_IMAGES,
+        with st.container(border=True):
+            if mode == "trace":
+                st.caption(i18n.t("studio.vector.trace_help"))
+                asset = ui.image_picker(
+                    library, key="studio_trace_source", label=i18n.t("studio.vector.image_to_trace")
                 )
-                st.session_state.studio_jobs.insert(0, job_id)
-                st.toast(i18n.t("toast.queued_vector"), icon=":material/queue:")
+                if st.button(
+                    i18n.t("studio.vector.trace"),
+                    type="primary",
+                    icon=":material/polyline:",
+                    disabled=not (fal.has_key() and asset),
+                    key="studio_trace_go",
+                    width="stretch",
+                ):
+                    if asset is not None:
+                        try:
+                            url = fal.ensure_remote_url(asset, library)
+                        except Exception as exc:  # noqa: BLE001
+                            st.error(i18n.t("error.prepare_asset", name=asset.name, error=exc))
+                        else:
+                            job_id = manager.submit(
+                                kind="vector",
+                                label=i18n.t("jobs.label.vectorize", name=asset.name),
+                                endpoint=config.VECTOR_ENDPOINT_TRACE,
+                                arguments={"image_url": url},
+                                save_kind=SAVE_IMAGE,
+                                parent_id=asset.id,
+                            )
+                            st.session_state.studio_jobs.insert(0, job_id)
+                            st.toast(i18n.t("toast.tracing"), icon=":material/queue:")
+            else:
+                prompt = st.text_area(
+                    i18n.t("studio.prompt"),
+                    height=100,
+                    key="studio_vector_prompt",
+                    placeholder=i18n.t("studio.prompt_placeholder"),
+                )
+                style_column, size_column = st.columns(2, gap="small")
+                with style_column:
+                    style_labels = [label for label, _ in config.VECTOR_STYLES]
+                    style_label = st.selectbox(
+                        i18n.t("studio.vector.style"), style_labels, key="studio_vector_style"
+                    )
+                with size_column:
+                    size_labels = list(config.VECTOR_SIZE_MAP)
+                    size_label = st.selectbox(
+                        i18n.t("studio.vector.size"),
+                        size_labels,
+                        index=size_labels.index("Square (1024²)"),
+                        key="studio_vector_size",
+                    )
+                st.caption(i18n.t("studio.vector.generate_caption"))
+                st.caption(i18n.t("studio.vector.pricing"))
+                if st.button(
+                    i18n.t("studio.vector.generate"),
+                    type="primary",
+                    icon=":material/polyline:",
+                    disabled=not (fal.has_key() and prompt.strip()),
+                    key="studio_vector_go",
+                    width="stretch",
+                ):
+                    job_id = manager.submit(
+                        kind="vector",
+                        label=i18n.t("jobs.label.vector"),
+                        endpoint=config.VECTOR_ENDPOINT_T2V,
+                        arguments={
+                            "prompt": prompt.strip(),
+                            "style": dict(config.VECTOR_STYLES)[style_label],
+                            "image_size": config.VECTOR_SIZE_MAP[size_label],
+                        },
+                        save_kind=SAVE_IMAGES,
+                    )
+                    st.session_state.studio_jobs.insert(0, job_id)
+                    st.toast(i18n.t("toast.queued_vector"), icon=":material/queue:")
 
     with right:
-        ui.jobs_panel(
-            st.session_state.studio_jobs,
-            title=i18n.t("studio.vector.jobs"),
-            on_asset=_studio_asset_actions,
-        )
+        if st.session_state.studio_jobs:
+            ui.jobs_panel(
+                st.session_state.studio_jobs,
+                title=i18n.t("studio.vector.jobs"),
+                on_asset=_studio_asset_actions,
+            )
+        else:
+            _studio_stage(i18n.t("studio.stage.empty"))
 
 
 # --------------------------------------------------------------------------- #
